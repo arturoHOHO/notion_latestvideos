@@ -1,26 +1,48 @@
 try {
-    var reqURL = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent("https://www.youtube.com/feeds/videos.xml?channel_id=");
-  
-  function loadVideo(iframe) {
-    $.getJSON(reqURL + iframe.getAttribute('cid'),
-      function(data) {
-        var videoNumber = (iframe.getAttribute('vnum') ? Number(iframe.getAttribute('vnum')) : 0);
-        console.log(videoNumber);
-        var link = data.items[videoNumber].link;
-        var title=data.items[videoNumber].title;
-        id = link.substr(link.indexOf("=") + 1);
-        iframe.setAttribute("src", "https://youtube.com/embed/" + id + "?controls=0&autoplay=1");
-        iframe.parentElement.querySelector("#video-title").innerText = title;
-      }
-    );
-  }
-  
-  var iframes = document.getElementsByClassName('latestVideoEmbed');
-  for (var i = 0, len = iframes.length; i < len; i++) {
-    loadVideo(iframes[i]);
-  }
-  
+    const requestOptions =
+    {
+      method: "GET",
+      redirect: "follow",
+    };
+    
+    const loadVideo = (iframe) =>
+    {
+      const channelId = iframe.getAttribute("cid");
+      const channelURL = encodeURIComponent(
+        `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
+      );
+      const requestURL = `https://api.rss2json.com/v1/api.json?rss_url=${channelURL}`;
+      fetch(requestURL, requestOptions)
+        .then((response) => response.json())
+        .then
+          (
+            (result) =>
+            {
+              const videoNumber = iframe.getAttribute("vnum")
+                ? Number(iframe.getAttribute("vnum"))
+                : 0;
+        
+              const { link, title, pubDate } = result.items[videoNumber];
+              const id = link.substr(link.indexOf("=") + 1);
+        
+              iframe.setAttribute(
+                "src",
+                `https://youtube.com/embed/${id}?controls=0&autoplay=1`
+              );
+        
+              iframe.parentElement.querySelector("#video-title").innerText = title;
+              iframe.parentElement.querySelector("#video-pubDate").innerText = pubDate;
+            }
+            )
+        .catch((error) => console.log("error", error));
+    };
+    
+    let iframes = document.getElementsByClassName("latestVideoEmbed");
+    for (let i = 0; i < iframes.length; i++)
+    {
+      loadVideo(iframes[i]);
+    }
   }
   catch(err) {
-    document.getElementById("demo").innerHTML = err.message;
+    document.getElementsByClassName("latestVideoEmbed").innerHTML = err.message;
   }
